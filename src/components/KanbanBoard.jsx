@@ -10,10 +10,12 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
+import TaskCard from "./TaskCard";
 
 const KanbanBoard = () => {
   const [columns, setColumns] = useState([]);
   const [activeColumn, setActiveColumn] = useState(null);
+  const [activeTask, setActiveTask] = useState(null);
   const [tasks, setTasks] = useState([]);
   const columnsId = useMemo(
     () => columns.map((column) => column.id),
@@ -47,6 +49,8 @@ const KanbanBoard = () => {
                   updateColumn={updateColumn}
                   createTask={createTask}
                   tasks={tasks.filter((task) => task.columnId === column.id)}
+                  deleteTask={deleteTask}
+                  updateTask={updateTask}
                 />
               ))}
             </SortableContext>
@@ -66,6 +70,18 @@ const KanbanBoard = () => {
                 deleteColumn={deleteColumn}
                 updateColumn={updateColumn}
                 createTask={createTask}
+                tasks={tasks.filter(
+                  (task) => task.columnId === activeColumn.id
+                )}
+                deleteTask={deleteTask}
+                updateTask={updateTask}
+              />
+            )}
+            {activeTask && (
+              <TaskCard
+                task={activeTask}
+                deleteTask={deleteTask}
+                updateTask={updateTask}
               />
             )}
           </DragOverlay>,
@@ -87,7 +103,7 @@ const KanbanBoard = () => {
     const newColumns = columns.filter((column) => column.id !== id);
     setColumns(newColumns);
   }
-  function createTask(id){
+  function createTask(id) {
     const newAddTask = {
       id: generateId(),
       content: `Task ${tasks.length + 1}`,
@@ -104,6 +120,20 @@ const KanbanBoard = () => {
     });
     setColumns(newColumns);
   }
+  function updateTask(id, content) {
+    const newTasks = tasks.map((task) => {
+      if (task.id === id) {
+        return { ...task, content };
+      }
+      return task;
+    });
+    setTasks(newTasks);
+  }
+
+  function deleteTask(id) {
+    const newTasks = tasks.filter((task) => task.id !== id);
+    setTasks(newTasks);
+  }
 
   function generateId() {
     return Math.floor(Math.random() * 10001);
@@ -112,6 +142,11 @@ const KanbanBoard = () => {
   function onDragStart(event) {
     if (event.active.data.current?.type === "Column") {
       setActiveColumn(event.active.data.current.column);
+      return;
+    }
+
+    if (event.active.data.current?.type === "Task") {
+      setActiveTask(event.active.data.current.task);
       return;
     }
   }
@@ -139,8 +174,6 @@ const KanbanBoard = () => {
       return arrayMove(columns, activeColumnIndex, overColumnIndex);
     });
   }
-
- 
 };
 
 export default KanbanBoard;
